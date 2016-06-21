@@ -1,0 +1,237 @@
+---
+layout: default
+title: Developers Quickstart Guide to aLs
+slug: developers-quickstart
+lead: "Learn how to write addons that extend Ajax Live search"
+---
+
+
+<!-- Intro -->
+<div class="bs-docs-section">
+  <h1 id="introduction" class="page-header">Developers quickstart guide to aLs</h1>
+	<p> This tutorial is going to take you through the process of extending aLs via addons. We are going to assume that you know the basics of developing WordPress plugins. If not, then take a look at the codex first.</p>
+	<p> We will create a WordPress plugin that replaces the text that is displayed at the top of search results. By default, aLs displays the number of found results;</p>
+	<p> However, we are going to change it to display the text 'Results for $query', where query is the term that the user was searching for.</p>
+	<p> To accomplish this; we will attach a filter to the following hook: <code>als_before_results</code></p>
+	
+</div>
+
+<!-- Starting up -->
+<div class="bs-docs-section">
+  <h2 id="begin" class="page-header">Starting up</h2>
+  <p>On your desktop; create a new file and name it my-plugin.php, or anything that you want to use as the name of our new plugin.</p>
+  <p> Now open it using your favourite editor (I use notepad++) and type the following. If you have a basic idea of plugin development, then the following codes should be very simple to follow up.</p>
+<pre>
+&lt?php
+/*
+Plugin Name: My Plugin Name
+Plugin URI: http://wordpress.org/plugins/my-plugin
+Description: A basic description of my plugin.
+Author: John Doe
+Version: 1.0
+Author URI: http://example.com/my-name
+*/
+</pre>
+  </div>
+<!-- Attaching The hook -->
+<div class="bs-docs-section">
+  <h2 id="hook" class="page-header">Attaching The hook</h2>
+  <p> In the same file, append the following:</p>
+  <pre>
+ function my_custom_result_text($text){
+	$query = sanitize_text_field( $_GET['s'] );
+	return __("Search results for: $query");
+ }
+ add_filter('als_before_results', 'my_custom_result_text');
+  </pre>
+</div>
+<!-- Starting up -->
+<div class="bs-docs-section">
+  <h2 id="finish" class="page-header">Finishing</h2>
+  <p> Our addon is now complete. Compress it into a zip file. Now head over to your plugins dashboard and click on add new, then click on upload. After WordPress completes uploading it, click on activate.</p>
+  <p> Now visit the front-end and try to search for anything then submit the form. You should be able to see our text showing up at the top of results instead of the default text.</p>
+</div>
+<!-- Starting up -->
+<div class="bs-docs-section">
+  <h2 id="filters" class="page-header">Filter Hooks</h2>
+  <p>This is a list of other filters that you can hook into in your custom addon. The list is not complete and we aim to update it whenever we come across a new filter hook.</p>
+<div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Since</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>als_settings_tabs_array</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_get_settings_page</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_admin_settings_sanitize_option</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_admin_settings_sanitize_option_{$option_name}</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_general_settings</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_get_settings_{$id}</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_searching_settings</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_results_settings</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_search_themes</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_get_sections_{$id}</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_settings_form_method_tab_{$tab}</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_search_string</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_search_results_count</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_search_post_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_author_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_author_not_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_author_name</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_cat</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_category_name</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_category_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_category_not_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_tag</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_tag_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_tag_not_in</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_index_post_types</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_date_query</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_before_results</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_found_post_ids</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_can_search</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_search_results</td>
+                  <td>1.0.0</td>
+                </tr>
+			  </tbody>
+			 </table>
+</div>
+  </div>
+<!-- Starting up -->
+<div class="bs-docs-section">
+  <h2 id="actions" class="page-header">Action Hooks</h2>
+  <p> This list lists some of the action hooks in WordPress. it's also still in development mode and other hooks will be inserted here as soon as we come across.</p>
+<div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Since</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>als_before_results</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_after_results</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_before_authors</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_after_authors</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_before_sponsored</td>
+                  <td>1.0.0</td>
+                </tr>
+				<tr>
+                  <td>als_after_sponsored</td>
+                  <td>1.0.0</td>
+                </tr>
+			  </tbody>
+			 </table>
+</div>
+
+  </div>
+<!-- Starting up -->
+<div class="bs-docs-section">
+  <h2 id="conclusion" class="page-header">Conclusion</h2>
+  <p> Now that you have a basic idea of what hooks aLs provides; go ahead and take a look at the <a href="../api-docs/index.html">api-docs</a> where we cover all the functions and classes used in aLs.</p>
+</div>
