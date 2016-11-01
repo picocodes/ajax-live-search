@@ -144,7 +144,16 @@ slug: features
     <li>1 Website</li>
     <li>24/7 Support</li>
     <li>Free Updates</li>
-    <li class="grey"><a href="https://sellfy.com/p/kWEh/checkout/" onclick="ga('send', 'event', 'Shop', 'buy', 'Personal')" class="button">Buy</a></li>
+    <li class="grey"><a href="https://sellfy.com/p/kWEh/checkout/" onclick="ga('ec:addProduct', {
+    'id': alsPersonal,
+    'name': Personal,
+    'category': Plugins,
+    'brand': Picocodes,
+    'variant': 1 Site,
+    'price': $29,
+    'quantity': 1
+  });
+  ga('ec:setAction', 'add'); ga('send', 'event', 'Shop', 'buy', 'Personal')" class="button">Buy</a></li>
   </ul>
 </div>
 
@@ -155,7 +164,16 @@ slug: features
     <li>5 Websites</li>
     <li>24/7 Support</li>
     <li>Free Updates</li>
-    <li class="grey"><a href="https://sellfy.com/p/Iriw/checkout/" class="button" onclick="ga('send', 'event', 'Shop', 'buy', 'Premium')">Buy</a></li>
+    <li class="grey"><a href="https://sellfy.com/p/Iriw/checkout/" class="button" onclick="ga('ec:addProduct', {
+    'id': alsPremium,
+    'name': Premium,
+    'category': Plugins,
+    'brand': Picocodes,
+    'variant': 5 Sites,
+    'price': $49,
+    'quantity': 1
+  });
+  ga('ec:setAction', 'add'); ga('send', 'event', 'Shop', 'buy', 'Premium')">Buy</a></li>
   </ul>
 </div>
 
@@ -166,7 +184,16 @@ slug: features
     <li>25 Websites</li>
     <li>24/7 Support</li>
     <li>Free Updates</li>
-    <li class="grey"><a href="https://sellfy.com/p/ow7q/checkout/" class="button" onclick="ga('send', 'event', 'Shop', 'buy', 'Business')">Buy</a></li>
+    <li class="grey"><a href="https://sellfy.com/p/ow7q/checkout/" class="button" onclick="ga('ec:addProduct', {
+    'id': alsBusiness,
+    'name': Business,
+    'category': Plugins,
+    'brand': Picocodes,
+    'variant': 25 Sites,
+    'price': $99,
+    'quantity': 1
+  });
+  ga('ec:setAction', 'add'); ga('send', 'event', 'Shop', 'buy', 'Business')">Buy</a></li>
   </ul>
 </div>	
 				</div>
