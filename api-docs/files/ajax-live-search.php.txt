@@ -1,0 +1,327 @@
+<?php
+/**
+ * Ajax Live Search
+ *
+ * Adds a modern touch to your WordPress search function
+ *
+ * @since             1.0.0
+ * @package           Ajax Live Search
+ *
+ * Plugin Name:     Ajax Live Search
+ * Plugin URI:      http://ajaxlivesearch.xyz
+ * Description:     Adds live search, ajax search, query caching, query logging and query completion among other functions
+ * Author:          Picocodes
+ * Author URI:      http://ajaxlivesearch.xyz
+ * Version:         2.2.8
+ * Text Domain:     ajax-live-search
+ * License:         GPL3+
+ * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
+ * Domain Path:     /languages
+ *
+ * @author          Picocodes
+ * @author          Lord Pappi
+ * @license         GNU General Public License, version 3
+ * @copyright       Picocodes
+ */
+
+// Exit if accessed directly
+if( !defined( 'ABSPATH' ) ) {
+    die;
+}
+
+    /**
+     * ajaxLiveSearch main class
+     *
+     * @package     Ajax Live Search / includes
+     * @since       1.0.0
+     */
+
+    if ( ! class_exists( 'ajaxLiveSearch' ) ) {
+
+        /**
+         * Main ajaxLiveSearch class
+         *
+         * @since       1.0.0
+         */
+        class ajaxLiveSearch {
+
+            /**
+             * @var       Plugin version
+             * @since       2.1.1
+             */
+
+            public $version = '2.2.8';
+			
+            /**
+             * Use this value as the text domain when translating strings from this plugin. It should match
+             * the Text Domain field set in the plugin header, as well as the directory name of the plugin.
+             * Additionally, text domains should only contain letters, number and hypens, not underscores
+             * or spaces.
+             *
+             * @access      protected
+             * @var         string $plugin_slug The unique ID (slug) of this plugin
+             * @since       2.1.1
+             */
+            protected $plugin_slug = 'ajax-live-search';
+
+            /**
+             * @access      protected
+             * @var         string $plugin_network_activated Check for plugin network activation
+             * @since       2.1.1
+             */
+            protected $plugin_network_activated = null;
+
+            /**
+             * @access      private
+             * @var        obj $instance The one true ajaxLiveSearch
+             * @since       2.1.1
+             */
+            private static $instance = null;
+			
+			 /**
+             * @access      public
+             * @since       2.1.1
+             */
+            public $search = null;
+			
+			/**
+             * @access      public
+             * @since       2.2.2
+             */
+            public $plugin_path = null;
+			
+			/**
+             * @access      public
+             * @since       2.2.2
+             */
+            public $plugin_url = null;
+			
+            /**
+             * Get active instance
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      self::$instance The one true ajaxLiveSearch
+             */
+            public static function instance() {
+				
+                if ( is_null( self::$instance ) ) {
+                    self::$instance = new self();									
+                }
+
+                return self::$instance;
+            }
+			
+			/**
+			 * aLs Constructor.
+			 */
+			public function __construct() {
+				
+				add_action( 'init', array( $this, 'init' ), 2 );
+				
+			}
+			
+			/**
+             * Inititalizes everything
+             *
+             * @access      public
+             * @since       2.2.7
+             * @return      string
+             */
+            public function init() {
+                if( class_exists('ajaxLiveSearchPro') ) //The premium version is installed
+					return;
+				
+				$this->plugin_path = $this->plugin_path();
+				$this->plugin_url = $this->plugin_url();
+				
+				$this->includes();
+				$this->init_hooks();
+				
+				// Since version 2.1.1 we changed our db structure
+				$current = (int) get_option ( 'als_db_version', '1' );
+				
+				if ( $current < 211 ) {
+					
+					$this->upgradedb();
+					
+				}
+				
+				if( $current != 228) {
+					//Update to current version
+					update_option ( 'als_db_version', '228' );
+					
+				}
+								
+				$this->search = new alsSearch();
+				
+				do_action('als-loaded');
+           }
+		   
+			/**
+             * Plugin path
+             *
+             * @access      public
+             * @since       2.2.2
+             * @return      string
+             */
+            public function plugin_path() {
+                return trailingslashit( plugin_dir_path( __FILE__ ) );
+           }
+		   
+		   /**
+             * Plugin url
+             *
+             * @access      public
+             * @since       2.2.2
+             * @return      string
+             */
+            public function plugin_url() {
+                return plugins_url( '/', __FILE__ );
+           }
+
+            /**
+             * Include necessary files
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      void
+             */
+            private function includes() {
+				
+				 // Elementa
+                require_once $this->plugin_path . 'includes/elementa/elementa.php';
+				
+				 // Include general functions
+                require_once $this->plugin_path . 'includes/functions.php';
+				
+				 // Include general hooks
+                require_once $this->plugin_path . 'includes/hooks.php';
+				
+                // Include admin options
+                require_once $this->plugin_path . 'includes/admin/admin.php';
+
+				// Include main search class
+                require_once $this->plugin_path . 'includes/class-search.php';
+			
+				// Include Porter stemmer
+                require_once $this->plugin_path . 'includes/porter-stemmer.php';
+            }
+
+            /**
+             * Run action and filter hooks
+             *
+             * @access      private
+             * @since       2.1.1
+             * @return      void
+             */
+            private function init_hooks() {
+
+                // Activate plugin when new blog is added
+                add_action( 'wpmu_new_blog', array( $this, 'activate_new_site' ) );
+
+                // Load plugin text domain
+                add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ), 20 );
+
+            }
+			
+			/**
+             * Fired whenever upgrading from an older version or installing a new version
+             *
+             * @access      private
+             * @since       2.1.1
+             * @return      void
+             */
+            private static function upgradedb() {
+				global $wpdb;
+				require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+				$charset_collate_bin_column = '';
+				$charset_collate = '';
+
+				if (!empty($wpdb->charset)) {
+    				$charset_collate_bin_column = "CHARACTER SET $wpdb->charset";
+					$charset_collate = "DEFAULT $charset_collate_bin_column";
+				}
+				
+				if (strpos($wpdb->collate, "_") > 0) {
+    				$charset_collate_bin_column .= " COLLATE " . substr($wpdb->collate, 0, strpos($wpdb->collate, '_')) . "_bin";
+    				$charset_collate .= " COLLATE $wpdb->collate";
+				} else {
+					
+    				if ($wpdb->collate == '' && $wpdb->charset == "utf8") {
+	    				$charset_collate_bin_column .= " COLLATE utf8_bin";
+					}
+					
+				}
+    
+
+				$searches_log_table = $wpdb->prefix . "als_log";
+				$index_table = $wpdb->prefix . "als_index";
+				
+				$sql = "CREATE TABLE IF NOT EXISTS " . $searches_log_table . " (id bigint(9) NOT NULL AUTO_INCREMENT, 
+					query varchar(200) NOT NULL,
+					modified varchar(200) NOT NULL,
+					indexed varchar(200) NOT NULL,					
+					hits mediumint(9) NOT NULL DEFAULT '0',
+					searches mediumint(9) NOT NULL DEFAULT '1',
+					time timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+					UNIQUE KEY id (id)) $charset_collate;";
+
+				dbDelta($sql);
+				$wpdb->query("ALTER TABLE {$searches_log_table} ENGINE=MyISAM");
+				$wpdb->query("CREATE FULLTEXT INDEX indexed ON {$searches_log_table} (indexed)");
+				
+				$sql = "CREATE TABLE IF NOT EXISTS " . $index_table . " (id bigint(9) NOT NULL, 
+					title varchar(200),
+					content TEXT,
+					comment_count INT(9),
+					comment TEXT,
+					url varchar(200),
+					excerpt TEXT,
+					post_type varchar(200),
+					date timestamp NOT NULL,
+					boost int(9) NOT NULL DEFAULT '1',
+					UNIQUE KEY id (id)) $charset_collate;";
+
+				dbDelta($sql);
+				
+				//WE also add full text indexes on individual keys to exhibit individual importance
+				
+				$wpdb->query("ALTER TABLE {$index_table} ENGINE=MyISAM");
+				$wpdb->query("CREATE FULLTEXT INDEX title ON {$index_table} (title)");
+				$wpdb->query("CREATE FULLTEXT INDEX content ON {$index_table} (content)");
+				$wpdb->query("CREATE FULLTEXT INDEX comment ON {$index_table} (comment)");
+				$wpdb->query("CREATE FULLTEXT INDEX url ON {$index_table} (url)");
+				$wpdb->query("CREATE FULLTEXT INDEX excerpt ON {$index_table} (excerpt)");
+				$wpdb->query("ANALYZE TABLE {$index_table}");
+				
+				update_option ( 'als_db_version', '222' );
+            }
+			
+			/**
+             * Loads the textdomain
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      void
+             */
+            public function load_plugin_textdomain() {
+				
+                load_plugin_textdomain(
+					'ajax-live-search',
+					false,
+					$this->plugin_path . 'languages/'
+				);
+				
+            }
+			
+
+        }
+    }
+	
+function als_lite() {
+	return ajaxLiveSearch::instance();
+}
+
+als_lite();

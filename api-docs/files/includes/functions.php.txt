@@ -1,0 +1,160 @@
+<?php
+
+/**
+ * Defines basic utility functions
+ *
+ *
+ * @since             1.0.0
+ * @package           Ajax Live Search
+ *
+ */
+
+/**
+ * Main instance of WP-Elements.
+ *
+ * Returns the main instance of PC to prevent the need to use globals.
+ *
+ * @since  0.1.0
+ * @return WP-Elements
+ */
+function WE_als( $id = false) {
+	return WP_Elements_Als::instance( $id );
+}
+
+ /**
+  * Gets a user defined option
+  *
+  * @since       2.1.1
+  * @return      mixed bool when no value is found; the value otherwise
+  */
+   function als_get_option( $option = false ) {
+	   
+		return WE_als( 'ajax-live-search' )->get_option( $option );
+				
+   }
+   
+/**
+ * Validates an array
+ *
+ * @param $array the array to validate 
+ *
+ * @return bool true on validate or false on invalid value
+ * @since 2.0.0
+**/
+
+function als_is_array( $array ) {
+	return ( is_array($array) && count($array) > 0 );
+}
+
+/**
+ * Validates a string
+ *
+ * @param $string the string to validate 
+ *
+ * @return bool true on validate or false on invalid value
+ * @since 2.0.0
+**/
+
+function als_is_string( $string ) {
+	return ( !is_null($string) && strlen($string) > 0 );
+}
+
+/**
+ * Get's a given search modifier from a search term
+ *
+ * @param $modifier the modifier eg intittle:
+ * @param $q the query
+ *
+ * @return bool true on validate or false on invalid value
+ * @since 2.0.0
+**/
+
+function als_query_modifier( $modifier, $q ) {
+	// the value to be modified starts with a quote, we use it as our delimeter
+	// Otherwise, we use spaces as delimiters
+	
+	$is_quoted = false;
+	$start = stripos($q, $modifier);
+	$regex = $modifier . '([\'"]{1})';
+	$q = stripslashes($q); //Took me 4 hours to realise that the query has been escaped with slashes
+	if($start === false){
+		
+		return false; // end early to save resources
+		
+	} else if(preg_match("/$regex/i", $q, $matches)){ 
+		
+		$is_quoted = true;
+		$quote=$matches[1];
+		
+	}
+	
+	$regex = '/\b' . $modifier . '(.+?)\s/i'; //captures the value assigned to a modifier
+	
+	if($is_quoted){
+		
+		$regex = '/\b' . $modifier . $quote . '(.+?)' . $quote .'/i'; //captures a quoted value assigned to a modifier
+		
+	}
+	
+	$q .= ' ';//To accomodate the space (\s) in the first regex
+	if(preg_match($regex , $q, $matches))
+		return $matches[1];
+	
+	return false;
+}
+
+ /**
+  * Returns an array of searchable  post types.
+  *
+  * @since       2.1.1
+  * @return      array an array of selected post types
+  */
+   function als_post_types(  ) {
+	   
+		$all = als_get_option( 'searchable-post-types' );
+		
+		if( !is_array( $all ) ) {			
+			return array();			
+		}
+		return $all;
+	
+   }
+
+/**
+  * Prints the frontend HTML needed to run Ajax Live Search
+  *
+  * @since       2.1.1
+  * @return      void
+  */
+   function als_ajax_init() {
+	   
+		echo '<span id="als-live-init-ajlive"></span>';
+		
+   }
+   
+/**
+ * Returns an array containing the number of searches containing results and searches that don't have results.
+ * 
+ * For example;
+ * If it returns array(10, 20), that means that 10 searches lacked results
+ * while 20 searches on the website had results.
+ *
+ * @since  1.0.0
+ *
+ * @return array - An array containg the number of searches without results and those with results.
+ */
+
+function als_results_vs_no_results() { 
+	global $wpdb;
+	$table = $wpdb->prefix . 'als_log';
+	$sql_empty = "SELECT COUNT(id) as no_results FROM $table WHERE hits=0";
+	$sql_empty = $wpdb->get_results($sql_empty);
+	$sql_empty = $sql_empty[0]->no_results;
+	
+	$sql_non_empty = "SELECT COUNT(id) as results FROM $table WHERE hits<>0";
+	$sql_non_empty = $wpdb->get_results($sql_non_empty);
+	$sql_non_empty = $sql_non_empty[0]->results;
+
+	return array($sql_empty, $sql_non_empty);
+
+}

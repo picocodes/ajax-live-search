@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * Outputs a card
+ *
+ *
+ */	
+if(! isset( $args['cards'] ) OR ! is_array ( $args['cards'] ) )
+	return; //No cards to render
+
+$class = $args['class'];
+if( isset( $args['card_wrapper_start'] ) ) {
+	echo $args['card_wrapper_start'];
+}
+		
+foreach( $args['cards'] as $card => $details ) {
+	
+	$single_class = 'elementa-card ';
+	if( isset( $details['card_class'] ) ) {
+		$single_class .= $details['card_class'];
+	}
+		
+	echo "<div class='$class'><div class='$single_class'>";
+		if( isset( $details['card_image'] ) ) {
+			$image = esc_url( $details['card_image'] );
+			echo "<div class='elementa-card-image'><img src='$image'></div>";
+		}
+		
+		if( isset( $details['card_content'] ) OR  isset( $details['card_title'] )) {
+
+			echo '<div class="elementa-card-content">';
+			if ( isset( $details['card_title'] ) )
+				echo "<h3>{$details['card_title']}</h3>";
+			
+			if ( isset( $details['card_content'] ) )
+				echo $details['card_content'];
+			
+			echo '</div>';
+			
+		}
+		
+		
+		if( isset( $details['card_action'] ) ) {
+			echo "<div class='elementa-card-action'>{$details['card_action']}</div>";
+		}
+		
+	echo '</div></div>';
+	
+}
+
+if( isset( $args['card_wrapper_end'] ) ) {
+	echo $args['card_wrapper_end'];
+}

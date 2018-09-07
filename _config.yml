@@ -8,7 +8,7 @@ permalink:        pretty
 # Server
 destination:      _gh_pages
 baseurl:          ""
-url:              http://ajaxlivesearch.xyz
+url:              https://ajaxlivesearch.xyz
 encoding:         UTF-8
 exclude:          [assets/scss/]
 gems:
