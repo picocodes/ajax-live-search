@@ -1,0 +1,288 @@
+<?php
+
+/**
+ * Defines non-search hooks used
+ *
+ *
+ * @since             2.1.1
+ * @package           Ajax Live Search
+ *
+ */
+
+
+/**
+ * Fires during the wp_head hook.
+ *
+ * Prints the required css and meta elements.
+ *
+ * @since  0.1.0
+ * @return void
+ */
+function als_wp_head() {
+	$border1 = als_get_option( 'border-autocomplete' );
+	$border2 = als_get_option( 'border-single-autocomplete' );
+	$background = als_get_option( 'autocomplete-background' );
+	$color1 = als_get_option( 'autocomplete-suggestion-color' );
+	$color2 = als_get_option( 'autocomplete-suggestion-matched' );
+	
+	if( $border1 ){
+		$border1 = "border: 1px solid $border1;";
+	}
+	
+	if( $border2 ){
+		$border2 = "border: 1px solid $border2;";
+	}
+	
+	if( $background ){
+		$background = "background-color: $background;";
+	}
+	
+	if( $color1 ){
+		$color1 = "color: $color1;";
+	}
+	
+	if( $color2 ){
+		$color2 = ".autocomplete-suggestion b{ color: $color2;}";
+	}
+	
+    echo '<meta name="generator" content="ajaxlivesearch.xyz 2.2.2"/>';
+	
+	echo "<style>.autocomplete-suggestions {
+    text-align: left; cursor: default; $border1 $background border-top: 0; box-shadow: -1px 1px 3px rgba(0,0,0,.1);
+    position: absolute; display: none; z-index: 9999; max-height: 254px; overflow: hidden; overflow-y: auto; box-sizing: border-box;
+	}
+	.autocomplete-suggestion { $border2 border-top: 0; $color1 position: relative; padding: 0 .6em; line-height: 23px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.02em; }
+	.autocomplete-suggestion.selected { background: #f0f0f0; }
+	.als-loading {display:flex; justify-content: center; align-items: center;}
+	.type-sponsored_result{background-color: rgba(255, 204, 187, 0.09);} $color2
+	</style>";
+}
+add_action( 'wp_head', 'als_wp_head' );
+	
+	/**
+	 * Fires during the wp_enqueue_scripts action hook
+	 *
+	 * @since 1.0
+	 *
+	 * @return null
+	 */
+	function als_front_scripts(  ) {
+		
+		wp_register_script( 'als_front', als_lite()->plugin_url . 'wp-elements/assets/js/als.js', array( 'jquery' ), null, true);
+		$engine = als_get_option('als-autocomplete-engine');
+		
+		if( $engine == 'wikipedia' ) {
+			
+			$request_url = 'https://en.wikipedia.org/w/api.php';
+			$fields = array(
+				'format' => 'json',
+				'limit' => als_get_option('als-autocomplete-count'),
+				);
+			$search_string = 'search';
+			
+		}elseif( $engine == 'youtube' ) {
+			
+			$request_url = 'http://suggestqueries.google.com/complete/search/';
+			$fields = array(
+				'ds' => 'yt',
+				'client' => 'firefox',
+				);
+			$search_string = 'q';
+			
+		}elseif( $engine == 'google' ) {
+			
+			$request_url = 'http://suggestqueries.google.com/complete/search/';
+			$fields = array(
+				'client' => 'firefox',			
+				);
+			$search_string = 'q';
+			
+		} else {
+			
+			$request_url = admin_url( 'admin-ajax.php' );
+			$fields = array(
+				'nextNonce' => wp_create_nonce('myajax-next-nonce'),
+				'limit' => als_get_option('als-autocomplete-count'),
+				'action' => 'alsgetsuggestions',
+				);
+			$search_string = 's';
+			
+		}
+		
+		$params = array(
+			'ajaxurl'               => admin_url( 'admin-ajax.php' ),
+			'home_url'                => home_url(),
+			'nextNonce'				=>wp_create_nonce('myajax-next-nonce'),
+			'load_suggestions'	=> als_get_option('enable-autocomplete'),
+			'search_string'	=> $search_string,
+			'min_chars'	=> 1,
+			'delay'	=> 150,
+			'fields'	=> apply_filters( 'als-ajax-search-fields', $fields),
+			'request_url'	=> $request_url,
+			'ajax_results' => als_get_option('als-ajax-search'),
+			'live_results' => als_get_option('als-live-search'),
+			'pre_loader' => als_lite()->plugin_url . 'preloaders/Preloader_1.gif',
+		);
+		
+		wp_localize_script( 'als_front', 'als', $params );
+		wp_enqueue_script( 'als_front' );
+				
+	}
+	
+	add_action( 'wp_enqueue_scripts', 'als_front_scripts' );
+	
+    /**
+	 * Fires when the user requests search results via ajax search
+	 *
+	 * @since 1.0
+	 *
+	 * @return null
+	 */
+
+function als_get_suggestions() {
+	$s=trim($_GET["s"]);
+	$callback=isset($_GET["callback"]) ? trim($_GET["callback"]) : false;
+	
+	//Check nonce
+	$nonce = $_GET['nextNonce'];
+
+	if ( ! wp_verify_nonce( $nonce, 'myajax-next-nonce' ) OR empty($s)) {
+			die ('["", []]');
+		}
+		
+	global $wpdb;
+	$table = als_get_option('als-autocomplete-table');
+	$count = intval($_GET["limit"]);
+	$s = $wpdb->prepare('%s', $s . '%');
+	if($table == 'posts') {
+		
+		$sql ="SELECT post_title FROM {$wpdb->posts} 
+			WHERE LOWER(post_title) LIKE LOWER($s) AND post_status='publish' ORDER BY post_title ASC 
+			LIMIT $count";
+		
+	} else {
+		$table = $wpdb->prefix . 'als_log';
+		$sql = "SELECT modified FROM {$table} 
+			WHERE LOWER(modified) LIKE LOWER($s) ORDER BY modified ASC 
+			LIMIT $count";
+		
+	}
+		
+	$results = array(sanitize_text_field($_GET["s"]));
+	$results[] = $wpdb->get_col($sql);
+	
+	if($callback) {
+		
+		echo $callback . '(' .json_encode($results) . ')';
+		
+	} else {
+		
+		echo json_encode($results);
+		
+	}
+	
+
+	exit; //This is important
+}
+add_action( 'wp_ajax_alsgetsuggestions', 'als_get_suggestions' );
+add_action( 'wp_ajax_nopriv_alsgetsuggestions', 'als_get_suggestions' );
+
+/**
+ * Handles the ajax requests for search results
+**/
+
+function als_get_results() {
+	
+	//Check nonce
+	$nonce = $_GET['nextNonce'];
+
+	if ( ! wp_verify_nonce( $nonce, 'myajax-next-nonce' ) ) {
+			die (__( 'There was a problem processing your results!', 'ajax-live-search' ));
+		}
+	
+	define('ALS_LOADING_AJAX_RESULTS', true);
+	
+	$args = array(
+	
+		's' => $_GET['s'],
+		
+	);
+	
+	//Most themes and plugins check if is_search etc; yet during ajax global wp_query is null. So we set it; Especially the official 2016 theme that checks if is_search() before printing the excerpt
+	global $wp_query;
+	global $wp_the_query;
+	$wp_the_query = $wp_query = new WP_Query($args);
+		
+	ob_start();
+		
+		if( have_posts() ) :
+		
+			// Start the loop.
+			while ( have_posts() ) : the_post();
+
+				get_template_part( als_get_option('als-live-search-loop-file') );
+			
+			endwhile;
+
+			
+		//No results
+		else :
+			_e( 'No results matched your search term. Please try again with another search term.', 'ajax-live-search' );
+		endif;
+		
+	$content = ob_get_clean();
+	echo $content;
+		
+	exit; //This is important
+}
+add_action( 'wp_ajax_alsgetresults', 'als_get_results' );
+add_action( 'wp_ajax_nopriv_alsgetresults', 'als_get_results' );
+
+/**
+ * Filters the search query
+ * 
+**/
+
+function als_get_search_query($s) {
+	if(isset($_GET['s']))
+		return esc_attr($_GET['s']);
+	
+	return $s;
+}
+
+add_filter( 'get_search_query', 'als_get_search_query' );
+
+
+/**
+ * Handles ajax requests for csv files
+**/
+function als_csv_get() {
+
+	//Check nonce
+	$nonce = $_GET['nextNonce'];
+	
+	if ( ! wp_verify_nonce( $nonce, 'myajax-next-nonce' )) {
+			die ('There was a problem with your request. Try reloading the page first.');
+		}
+
+	$results = alsSearch::previous_searches('LIMIT 5000'); 
+	$json = array();
+	$num=0;
+	$file = md5(mt_rand());
+	$fp=fopen($file, 'w');
+	fputcsv($fp, array('Query'=>'Query', 'Hits'=>'Hits', 'Searches'=>'Searches'));
+	foreach ($results as $single){
+		$json[$num]['Query']= $single->modified;
+		$json[$num]['Hits']= $single->hits;
+		$json[$num]['Searches']= $single->searches;
+		fputcsv($fp, $json[$num]);
+		$num++;		
+	}
+	fclose($fp);
+	
+	echo file_get_contents($file);
+	exit; //This is important
+			
+}
+add_action( 'wp_ajax_alscsv', 'als_csv_get' );
+add_action( 'wp_ajax_nopriv_alscsv', 'als_csv_get' );

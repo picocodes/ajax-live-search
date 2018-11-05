@@ -1,0 +1,23 @@
+<?php
+/**
+ * Ajax Live Search Uninstall
+ *
+ *
+ * @author      Picocodes
+ * @version     2.1.1
+ */
+
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+	exit;
+}
+
+global $wpdb;
+
+	// Tables.
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}als_log" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}als_index" );
+	
+	// Delete options.
+	$wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE 'als\_%';");
+	
+	delete_option( 'ajax_live_search' );

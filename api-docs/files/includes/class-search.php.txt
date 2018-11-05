@@ -1,0 +1,940 @@
+<?php
+
+    /**
+     * Contains the main search class
+     *
+     * @package     Ajax Live Search / includes
+     * @since       2.1.1
+     */
+
+    // Exit if accessed directly
+    if ( ! defined( 'ABSPATH' ) ) {
+        exit;
+    }
+
+    if ( ! class_exists( 'alsSearch' ) ) {
+
+        /**
+         * Main Search class
+         *
+         * @since       2.1.1
+         */
+        class alsSearch {
+			
+			public $stopwords = array();
+
+            /**
+             * Initialises the search class
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      void
+             */
+            public function __construct() {
+				
+				//stopwords
+				$this->stopwords = require( 'stopwords.php' );
+				
+				//Register our search functionality
+				add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ), 30 );
+				
+				//Index posts on publish
+				add_action( 'save_post', array( $this, 'publish_post' ),10 ,3 );
+				
+				//Deindex posts on unpublish
+				add_action( 'delete_post', array( $this, 'delete_post' ));
+				add_action( 'transition_post_status', array( $this, 'maybe_delete_post' ) ,10 ,3 );
+				
+				//Custom snippets
+				add_filter( 'the_excerpt', array( $this, 'snippet' ),30 );
+				add_filter( 'the_content', array( $this, 'snippet' ),30 );
+				
+				//Index some more posts
+				$this->index_next();
+				
+            }
+
+            /**
+             * Extracts a result snippet from a string of text
+             *
+             * @access      public
+             * @since       2.1.1
+             *
+             * @param       string $content The content to snippetify
+             *
+             * @return      string the  (maybe) highlighted snippet
+             */
+            public function snippet( $content ) {
+                
+	            //Check if it is the main search query
+				if( !is_main_query() OR !in_the_loop() ){
+		            return $content;
+	            };
+				
+				//Make sure search term is set and custom snippets are allowed
+	            if( !als_get_option( 'als-snippet-enable' ) OR !isset( $_GET['s'] ) ){
+		            return $content;
+	            };
+				
+				
+				global $post;
+				$content = do_shortcode( $post->post_content );
+				$s = $_GET['s'];
+				
+				//Convert the search term to words and clean it
+				$s_words = array_unique( $this->prepare($s) );
+				$s = $this->remove_modifiers($s);
+				
+				//Get a list of html tags to keep in the snippet
+				$tags = explode(',', als_get_option( 'als-snippet-tags' ));
+				$modified_tags = array();
+				
+				for ( $i = 0; $i < count($tags); $i++ ) {
+					//Converts them to something like array( 'a'=> array() )
+					$tags[$i] = trim($tags[$i]);
+					$modified_tags[$tags[$i]] = array();
+				}
+				
+				//Finally, the content
+				
+				//Then strip html
+				$content = wp_kses ( stripslashes ( $content ), $modified_tags );
+				
+				//Calculate the length of the snippet
+				$radius = absint ( als_get_option ( 'als-snippet-length' ) )  / 2;
+				$s_len = strlen( $s );
+				$text_len = strlen( $content );
+				
+				if( $radius < $s_len ) {					
+					$radius = $s_len; //Radius cant be less than the search term					
+				}
+				
+				//Then create the snippet.
+				$excerpt =  false;
+				
+				foreach ($s_words as $s_word) {
+					
+					$pos = strpos ( strtolower($content), strtolower ( $s_word ) );
+					
+					//If current term missing from content move to next term
+					if($pos === false) { //use === comparator coz the word might appear at the start hence giving a false positive
+					
+						continue;
+						
+					}
+					
+					$found = true;
+					//Hopefully; the term should appear at the centre of the snippet
+					$start = 0;
+					
+					if ($pos > $radius) {
+						
+						$start = $pos - $radius;
+						
+					}
+					
+					//If the word appears at the beginning...
+					$overflow = 0;
+					if ( $pos < $radius ) {
+						
+						$overflow = $radius - $pos;
+						
+					}
+					
+					
+					$start = absint($start);
+					$end = absint($start + strlen($s_word) + $overflow + ($radius*2));				
+					
+					//Set prefixes and suffixes
+					$b = '';
+					$e = '';
+					if ($start != 0)
+						$b = '...';
+					
+					if ($end + 1 < $text_len)
+						$e = ' ...';
+					
+					$excerpt =  $b . substr($content,$start , $end - $start) . $e;
+					break;
+				}
+
+				//If no word matched the content; we create a standard excerpt
+	
+				if(!$excerpt){
+					
+					$excerpt = substr($content, 0, $radius * 2) . '...';
+	
+				}
+							
+				//If we not highlighting; return  our excerpt
+				if ( !als_get_option( 'als-snippet-highlight' ) ){
+					return $excerpt;
+				}
+				$color = als_get_option( 'als-snippet-color' );
+				$style = '';
+				if( $color ){
+					$style = "style=color:$color;";
+				}
+				
+				foreach($s_words as $s_word) {
+					
+					$excerpt=preg_replace("/($s_word)(?![^<]*>)/i", "<strong><span class='alsexcerpt' $style>\${1}</span></strong>", $excerpt);
+					
+				}
+
+				return $excerpt;
+	
+            }
+
+            /**
+             * Gets a list of published posts
+             *
+             * @access      public
+             * @since       2.1.1
+             *
+             * @param       int $limit The maximum number of posts to fetch
+			 * @param       int $offset The minimum id to begin from
+             *
+             * @return      array an array of posts
+             */
+            public function get_posts( $limit, $offset = 0 ) {
+                
+				$args = array(
+						'post_status' => array('publish'),
+						'posts_per_page' => $limit,
+						'offset' => $offset,
+						'ignore_sticky_posts' => true,
+						'order' => 'ASC',
+						'post_type'=> als_post_types(),
+						'orderby' => 'id',
+						);
+						
+				$posts = new WP_Query($args);
+				return $posts->posts;
+				
+            }
+			
+			/**
+             * Gets a list of published non-indexed posts
+             *
+             * @access      public
+             * @since       2.1.1
+             *
+             * @param       int $limit The maximum number of posts to fetch
+			 * @param       int $offset The minimum id to begin from
+             *
+             * @return      array an array of posts
+             */
+            public function get_non_indexed_posts( $count ) {
+                
+				$count = intval ( $count ) + 1;
+				$args = array(
+						'post_status' => array('publish'),
+						'posts_per_page' => $count,
+						'ignore_sticky_posts' => true,
+						'order' => 'ASC',
+						'orderby' => 'id',
+						'post_type'=> als_post_types(),
+						'post__not_in' => $this->indexed_ids(),
+						);
+				
+				//If we are also indexing attachments
+				if( in_array('attachment', als_post_types()) ) {
+					
+					$args['post_status'] = array('publish', 'inherit');
+					
+				}
+					
+				$posts = new WP_Query($args);
+				return $posts->posts;
+				
+            }
+
+            /**
+             * Searches the index for a given query
+             *
+             * @access      public
+             * @since       2.1.1
+             *
+             * @param       string $query The query to search for
+             * @return      array an array of found post ids
+             */
+            public function search ( $q ) {
+				global $wpdb;
+				
+				$s = implode( ' ' ,$this->prepare ( $q )); //stems and rids stopwords
+				$s1 = implode( ' ' ,$this->prepare ( $q, true )); //stems and rids stopwords except query modifiers
+
+				//if the query was made up entirely of stopwords, we fallback to the inbuilt search engine, no need to waste resources
+				if($s == '') {
+
+					return array();
+					
+				}
+				
+				//CLean the string
+				$s = $wpdb->prepare('%s', $s);
+				$s1 = $wpdb->prepare('%s', $s1);
+				
+				//Fetch content weight
+				$title_weight = intval(als_get_option( 'als-title-weight' ));
+				$content_weight = intval(als_get_option( 'als-content-weight' ));
+				$excerpt_weight = intval(als_get_option( 'als-excerpt-weight' ));
+				$url_weight = intval(als_get_option( 'als-url-weight' ));
+				$comment_weight = intval(als_get_option( 'als-comment-weight' ));
+				
+				//Score field holds the relevancy score of a given post
+				$score = '(0';
+				
+				$fields_to_index = array_unique(als_get_option( 'fields-to-index' ));
+
+				if ( is_array ( $fields_to_index ) ) {
+					
+					foreach($fields_to_index as $col) {
+						
+						if ( strval($col) != '0') {//Bug in redux??
+						
+						$weight = intval(als_get_option( "als-$col-weight" ));
+						
+						$score .= " + (MATCH($col) AGAINST($s) * $weight)";
+						
+						}
+						
+					}
+
+				}
+
+				//Should we favour popular posts?
+				
+				if ( als_get_option( 'als-favour-popular' ) ){
+					
+					$score .= '+ (IF(comment_count = 0, 0, log(comment_count)+0.5))'; //Log 1=0, so we add 0.5 to atleast give more weight to posts containing 1 comment
+				
+				}
+				
+				//Should we favour new posts?
+				
+				if ( als_get_option( 'als-favour-new' ) ){
+					
+					$score .= "+ (log(DATEDIFF(NOW(), date)+1))";
+				
+				}
+				
+				//post types to search
+				$post_types = als_post_types();		
+				
+				foreach($post_types as $type){
+					$type = strtolower($type);
+					$weight = intval(als_get_option ( "als-{$type}-weight" ));
+					
+					$score .= "+((post_type IN('{$type}'))*{$weight})";
+					
+					
+				}
+				$score .=  ') as score';
+                $excluded_posts = als_get_option ( 'excluded-post-types' );
+
+				//And finally some restrictions
+				$restrictions = " WHERE MATCH(content) AGAINST ($s1 IN BOOLEAN MODE)";
+				
+				if (als_is_array( $excluded_posts )) {
+					
+					$excluded_posts = implode(',',  $excluded_posts);
+					$restrictions .= " AND id not in($excluded_posts)";
+					
+				}
+				$table = $wpdb->prefix . 'als_index';
+				$sql = "SELECT ID, $score FROM $table $restrictions ORDER BY score DESC  LIMIT 100";
+				$results = $wpdb->get_col($sql);
+								
+
+				if (! is_array ( $results ) ) {
+					return false;
+				}
+				
+
+				$this->log_query($q, count($results));
+
+				return $results;
+            }
+
+            /**
+             * Logs a given search query
+             *
+             * @access      public
+             * @since       2.1.1
+             * @global      object $wpdb
+             * @return      void
+             */
+            public function log_query ( $q, $count ) {
+				
+                global $wpdb;
+				$searches_log_table = $wpdb->prefix . "als_log";
+				//Remove search modifiers then prepare for db insertion
+				$original = $wpdb->prepare('%s', $q);
+				$modified = $wpdb->prepare('%s', $this->remove_modifiers($q));
+				$indexed = $wpdb->prepare('%s', implode( ' ' ,$this->prepare ( $q )));
+				
+				$exists = $wpdb->get_results ( "SELECT searches as searches FROM {$searches_log_table} WHERE LOWER(query)=LOWER({$original})" );
+				
+				if(count($exists) < 1) {
+					$sql = "INSERT IGNORE INTO $searches_log_table (query, modified, indexed, hits)
+					VALUES ($original, $modified, $indexed, $count)";
+			
+					return $wpdb->query($sql);
+				} else {
+					$searches = intval($exists[0]->searches) + 1;
+					$sql = "UPDATE $searches_log_table SET searches=$searches, hits=$count WHERE LOWER(query)=LOWER($original)";
+			
+					return $wpdb->query($sql);
+				}
+            }
+			
+			/**
+             * Logs demo searches
+             *
+             * @access      public
+             * @since       2.2.2
+             * @global      object $wpdb
+             * @return      void
+             */
+            public function create_demo_queries () {
+				
+                global $wpdb;
+				$searches_log_table = $wpdb->prefix . "als_log";
+				
+				$keywords1 = explode (" ", "google facebook wordpress whatsapp gmail vanity envato twitter");
+				$keywords2 = explode (" ", "index delete deactivate edit hide hack duplicate remove");
+				$keywords3 = explode (" ", "account name user email password");
+				$searches = array();
+				
+				foreach( $keywords2 as $first ){
+					
+					foreach( $keywords1 as $second ) {
+						
+						foreach ( $keywords3 as $third ) {
+							
+							$count = mt_rand( 0, 40 );
+							$searched = mt_rand( 1, 100 );
+							$original = "$first $second $third";
+							$modified = $this->remove_modifiers( $original );
+							$indexed = implode( ' ' ,$this->prepare ( $original ));
+							
+							$value = $wpdb->prepare("(%s, %s,%s, %d, %d)",
+								$original, $modified, $indexed, $count, $searched);
+								
+							$searches[] = $value;
+						}
+						
+					}
+					
+				}
+				
+				$searches = implode(', ',$searches);
+				
+				$sql = "INSERT IGNORE INTO $searches_log_table (query, modified, indexed, hits, searches)
+					VALUES $searches";
+					
+				return $wpdb->query($sql);
+            }
+			
+			/**
+             * Reads the contents of the given pdf file
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      string a string containing the pdfs content
+             */
+            public function read_pdf ( $path ) {
+                
+				//TODO:
+				
+            }
+
+            /**
+             * Returs total number of indexed posts
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      int id of the last indexed post
+             */
+            public function total_indexed() {
+				
+				global $wpdb;
+				$index_table = $wpdb->prefix . "als_index";
+				$sql = "SELECT COUNT(id) as total FROM $index_table";
+				return $wpdb->get_var($sql);
+				
+            }
+			
+			/**
+             * Returns the id of the last indexed post
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      int id of the last indexed post
+             */
+            public function last_indexed() {
+				//Since indexes are sequential; the last indexed post is also the post with the highest id
+				global $wpdb;
+				$index_table = $wpdb->prefix . "als_index";
+				$sql = "SELECT MAX(id) as last FROM $index_table";
+				return $wpdb->get_var($sql);
+            }
+			
+			/**
+             * Returns Total number of searches
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      int numeber of searches
+             */
+            public function total_searches ( $conditions ='1 = 1' )  {
+				
+				global $wpdb;
+				$searches_log_table = $wpdb->prefix . "als_log";
+				$sql = "SELECT SUM(searches) as total FROM $searches_log_table WHERE {$conditions}";
+				return $wpdb->get_var($sql);
+				
+            }
+			
+			/**
+             * Fetches previous searches
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      array an array of previous searches
+             */
+            public function previous_searches ( $conditions ='' )  {
+				
+				global $wpdb;
+				$searches_log_table = $wpdb->prefix . "als_log";
+				$sql = "SELECT * FROM $searches_log_table {$conditions}";
+				return $wpdb->get_results($sql);
+				
+            }
+			
+			/**
+             * Displays a table of previous searches
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      void
+             */
+            public function show_searches ( $conditions ='', $echo = true )  {
+				
+				ob_start();
+				$searches = $this->previous_searches( $conditions );
+				if( !is_array( $searches ) ) {
+					return false;
+				}
+				?>
+				
+				<ul class="list-group">
+					<li class="list-group-item elementa-row hoverable teal white-text">
+						<span class="col s12 m4"> Query </span>
+						<span class="col s12 m4"> Searches </span>
+						<span class="col s12 m4"> Results </span>
+					</li>
+					
+			<?php
+				foreach($searches as $single){
+					$time = human_time_diff(strtotime($single->time) ) . ' ago';
+					echo "<li class='list-group-item elementa-row hoverable'> <span class='col s12 m4'> $single->query </span>";
+					echo "<span class='col s12 m4'> $single->searches </span>";
+					echo "<span class='col s12 m4'> $single->hits </span></li>";
+				}
+			?>
+			
+					</ul>
+			<?php	
+
+				$content = ob_get_contents();
+				ob_end_clean();
+				
+				if( $echo == true )
+					echo $content;
+				
+				return $content;
+            }
+			
+			/**
+             * Fetches indexed post ids
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      int id of the last indexed post
+             */
+            public function indexed_ids() {
+				
+				global $wpdb;
+				$index_table = $wpdb->prefix . "als_index";
+				$sql = "SELECT id FROM $index_table";
+				return $wpdb->get_col($sql);
+				
+            }
+
+            /**
+             * Fires when a post is being published
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       int $id the id of the post to index
+			 * @param       object $post The post object of the current post
+             * @return      void
+             */
+            public function publish_post ( $id, $post = false ) {
+				
+               //If the post is being published and this is not an autosave request; we add/update it in the index
+			   if ( (defined( 'DOUNG_AUTOSAVE' ) && DOING_AUTOSAVE ) || $post->post_status != 'publish') {
+					return $id;
+				}
+				
+				$this->index_single($id, $post );
+				
+            }
+			
+			/**
+             * Fires when a post status transitions
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       int $id the id of the post to index
+             * @return      void
+             */
+            public function maybe_delete_post ( $new_status, $old_status, $post ) {
+				
+              if ( $old_status == 'publish' && $new_status != 'publish' )
+					$this->delete_post( $post->ID );
+				
+            }
+			
+			/**
+             * Fires when a post is being deleted
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       int $id the id of the post to index
+             * @return      void
+             */
+            public function delete_post ( $id ) {
+				
+               global $wpdb;
+			    $index_table = $wpdb->prefix . 'als_index';
+			   $wpdb->query( $wpdb->prepare("DELETE FROM $index_table WHERE id= %d", $id));
+				
+            }
+			
+			 /**
+             * Adds a sinle post to the index
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       int $id the id of the post to index
+			 * @param       object $post The post object of the current post
+             * @return      void
+             */
+            public function index_single ( $id, $post ) {
+				global $wpdb;
+				
+               $prepared_values = $this->prepare_single($post);
+			   $index_table = $wpdb->prefix . 'als_index';
+			   
+			   $sql = "INSERT INTO $index_table (id, title, content, comment_count, url, excerpt, post_type, date, boost)
+					VALUES $prepared_values ON DUPLICATE KEY UPDATE title=VALUES(title),content=VALUES(content),comment_count=VALUES(comment_count),url=VALUES(url),excerpt=VALUES(excerpt),post_type=VALUES(post_type),date=VALUES(date), boost=VALUES( boost)";
+				
+				$wpdb->query($sql);
+				
+            }
+			
+			/**
+             * Indexes the next n posts that have not yet been indexed
+             *
+             * @access      public
+             * @since       2.1.1
+             * @return      void
+             */
+             public function index_next(  ) {
+				global $wpdb;
+				//First, we fetch the posts
+				$batches = intval ( als_get_option ( 'als-index-batches' ) );
+                $batches = $batches ? $batches : 1 ;
+				$posts = $this->get_non_indexed_posts( $batches );
+
+				if(! is_array ($posts)) {
+					return; //All indexed
+				}
+				
+				$filtered = array();
+
+				
+				//And prepare each post
+				$prepared_values = array();
+				foreach($posts as $post) {
+					
+					$prepared_values[] = $this->prepare_single($post);
+					
+				}
+				
+				$prepared_values = implode(',', $prepared_values);
+				if(strlen($prepared_values) < 5) //No empty posts
+					return;
+				
+				$index_table = $wpdb->prefix . 'als_index';
+				$sql = "INSERT INTO $index_table (id, title, content, comment_count, url, excerpt, post_type, date, boost)
+					VALUES $prepared_values ON DUPLICATE KEY UPDATE title=VALUES(title),content=VALUES(content),comment_count=VALUES(comment_count),url=VALUES(url),excerpt=VALUES(excerpt),post_type=VALUES(post_type),date=VALUES(date), boost=VALUES( boost)";
+				
+				$wpdb->query($sql);
+            }
+			
+			/**
+             * Prepares a single WordPress post object
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       object $post The post to prepare
+             * @return      string a prepared string
+             */
+            public function prepare_single ( $post ) {
+				global $wpdb;
+				
+				//Fields
+				$title = implode( ' ' ,$this->prepare ( $post->post_title ));
+				
+				$content = implode( ' ' ,$this->prepare ( do_shortcode($post->post_content )));
+				
+				$comment_count = intval( $post->comment_count );
+				
+				$url = str_replace("-", ' ', $post->post_name);
+				$url = implode( ' ' , $this->prepare ( $url ));
+				
+				$excerpt = implode( ' ' ,$this->prepare ( $post->excerpt ));
+				
+				$post_type = $post->post_type ;
+				$date = $post->post_date ;
+				$boost = intval(get_post_meta($post->ID, 'als_boost', true));
+				$content = $title . ' ' . $content . ' ' . $url . ' ' . $excerpt;
+
+				$return = "({$wpdb->prepare('%d', $post->ID)},{$wpdb->prepare('%s', $title)},{$wpdb->prepare('%s', $content)},{$wpdb->prepare('%d', $comment_count)},{$wpdb->prepare('%s', $url)},{$wpdb->prepare('%s', $excerpt)},{$wpdb->prepare('%s', $post_type)},{$wpdb->prepare('%s', $date)},{$wpdb->prepare('%d', $boost)})";
+				
+				return $return;
+			}
+			
+			/**
+             * Prepares a post for indexing
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       string $a the content to prepare
+             * @return      array an array of the post's words
+             */
+            public function prepare ( $a, $q = false ) {
+				
+               	if( $q == false ) { //< and > are used as query modifiers in a search string
+					
+					//Remove html
+					$a = preg_replace ('/<[^>]*>/', ' ', $a);
+					$a = str_replace("\"", ' ', $a);
+					$a = str_replace("“", ' ', $a);
+					$a = str_replace("+", ' ', $a);
+					$a = str_replace("~", ' ', $a);
+					$a = str_replace("-", ' ', $a);
+					$a = str_replace("@", ' ', $a);
+					$a = str_replace(":", ' ', $a);
+					$a = str_replace("*", ' ', $a);
+				}
+	            
+	            //Followed by tabs and carriage returns
+	            $a = str_replace("\r", ' ', $a);
+	            $a = str_replace("\n", ' ', $a);
+	            $a = str_replace("\t", ' ', $a);	
+		
+	            //Then advanced characters
+	            $a = stripslashes($a);
+	            $a = str_replace('ß', 'ss', $a);
+		
+	            //And then basic punctuations except -
+	            $a = str_replace("·", '', $a);
+	            $a = str_replace("'", ' ', $a);
+	            $a = str_replace("’", ' ', $a);
+				$a = str_replace("_", ' ', $a);
+	            $a = str_replace("‘", ' ', $a);
+	            $a = str_replace("„", ' ', $a);
+	            $a = str_replace("´", ' ', $a);
+	            $a = str_replace("×", ' ', $a);
+	            $a = str_replace("…", '', $a);
+	            $a = str_replace("€", '', $a);
+	            $a = str_replace("&shy;", '', $a);
+	            $a = str_replace(chr(194) . chr(160), ' ', $a);
+	            $a = str_replace("&nbsp;", ' ', $a);
+	            $a = str_replace('&#8217;', ' ', $a);
+                $a = preg_replace('/[[:space:]]+/', ' ', $a);
+	            $a = trim($a);
+				$a = strtolower( $a );
+				return $this->prepare_terms( explode( ' ', $a ) );
+				
+				
+            }
+			
+			/**
+             * Preprossess an array of terms
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       string $terms the terms to process
+             * @return      array an array of the processed terms
+             */
+            public function prepare_terms ( $terms ) {
+				
+               //Remove stopwords from the above array and tokenize the rest
+				$stopwords = $this->stopwords;
+				$terms = array_diff($terms, $stopwords);
+				
+				array_walk($terms, array( $this, '_prepare_term'));
+				return $terms;
+            }
+			
+			/**
+             * Walker for editing a single code piece
+             * @access      public
+             * @since       2.2.6
+			 * @param       string $term the term to prepare
+             * @return      void
+             */
+            public function _prepare_term ( &$term ) {
+
+				$term= PorterStemmer::Stem( trim( $term, '"'));
+				if (strlen($term) < 4) {
+						$term = 'als' . $term; //bypass mysql min of 4 chars per word
+					}
+            }
+			
+			/**
+             * Removes search modifiers from a string
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       string $content the content to prepare
+             * @return      string the cleaned content
+             */
+            public function remove_modifiers ( $content ) {
+				$modifiers = apply_filters('als_query_modifiers', array("+", "-", "\"", "~", "<", ">", "*",
+						"author_in:", "author:", "author_not_in:", "cat:", "category:", "tagged:",
+						"post_types:", "before:", "after:"));
+	
+	
+				return str_ireplace($modifiers, '', $content);
+	
+            }
+			
+			/**
+             * Fired before the main wp_query runs
+             *
+             * @access      public
+             * @since       2.1.1
+			 * @param       object $query The wordpress query being excecuted
+             * @return      array an array of the post's words
+             */
+            public function pre_get_posts ( $query ) {
+				
+				//Check if it is a search query
+               if((!is_admin() && $query->is_main_query() && $query->is_search()) OR (defined('ALS_LOADING_AJAX_RESULTS') && ALS_LOADING_AJAX_RESULTS == true)) {
+
+				   $results = apply_filters ( 'als_search_results', $this->search ( $_GET['s'] ) );
+				  
+				   //post types to search
+				   $post_types = als_post_types();
+			   
+			   
+			   //If we found results, we unset s; otherwise; we optionally fallback to WordPress
+			   if ( is_array ( $results ) && count( $results ) > 0 ) {
+					
+					$query->set('s', '');
+					$query->set('post__in', $results);
+					$query->set('orderby', als_get_option ( 'als-order-by' ));
+					
+				}
+				
+				//If we are also indexing attachments
+				if( in_array('attachment', als_post_types()) ) {
+					
+					$args['post_status'] = array('publish', 'inherit');
+					
+				}
+				
+				 $search_term = $_GET['s'];
+				 
+				//Finally, we apply query specific search filters
+				$args = apply_filters('als_all_search_modifiers', 
+							array(
+								'author__in'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_author_in', array(), $search_term)),
+											
+								'author__not_in'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_author_not_in', als_get_option ( 'excluded-user-posts' ), $search_term)),
+						
+								'author_name'=>array(
+									'sanitize'=>'als_is_string',
+									'value'=>apply_filters('als_author_name', '', $search_term)),
+											
+								'cat'=>array(
+									'sanitize'=>'als_is_string',
+									'value'=>apply_filters('als_cat', '', $search_term)),
+						
+								'category_name'=>array(
+									'sanitize'=>'als_is_string',
+									'value'=>apply_filters('als_category_name', '', $search_term)),
+											
+								'category__in'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_category_in', array(), $search_term)),
+
+								'category__not_in'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_category_not_in', als_get_option ( 'excluded-cats' ), $search_term)),	
+
+								'tag'=>array(
+									'sanitize'=>'als_is_string',
+									'value'=>apply_filters('als_tag', '', $search_term)),	
+
+								'tag__in'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_tag_in', array(), $search_term)),	
+
+								'tag__not_in'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_tag_not_in', als_get_option ( 'excluded-tags' ), $search_term)),	
+
+								'post_type'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=> apply_filters('als_wp_query_post_types', $post_types, $search_term)),
+
+								'date_query'=>array(
+									'sanitize'=>'als_is_array',
+									'value'=>apply_filters('als_date_query', array(), $search_term)),
+						
+								'posts_per_page'=>array(
+									'sanitize'=>'als_is_string',
+									'value'=>apply_filters('als_posts_per_page', 10, $search_term))
+							)
+						);
+						
+						foreach($args as $arg=>$data){
+			
+							if(!call_user_func($data['sanitize'], $data['value'])){
+
+								continue;
+				
+							}
+			
+							$query->set($arg, $data['value']);
+						}
+			   }
+			   				   
+            }
+
+        }
+    }
+
