@@ -3,7 +3,36 @@
 
     <!-- Docs page layout -->
 
-    {{ content }}
+    <div class="container bs-docs-container">
+
+      <div class="row">
+		<div class="col-md-2" role="main" role="complementary">
+           <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm">
+            <ul class="nav bs-docs-sidenav">
+              {% if page.slug == "getting-started" %}
+                {% include nav/getting-started.html %}
+              {% elsif page.slug == "developers-quickstart" %}
+                {% include nav/developers-quickstart.html %}
+              {% elsif page.slug == "about" %}
+                {% include nav/about.html %}
+              {% elsif page.slug == "features" %}
+                {% include nav/features.html %}
+              {% endif %}
+            </ul>
+            <a class="back-to-top" href="#top">
+              Back to top
+            </a>
+          </nav>
+        </div>
+        <div class="col-md-7 als-docs" role="main">
+          {{ content }}
+        </div>
+		<div class="col-md-3" role="complementary">
+          {% include nav/sidebar.html %}
+        </div>
+
+      </div>
+    </div>
 
 
-  {% include footer.html %}
+    {% include footer.html %}
