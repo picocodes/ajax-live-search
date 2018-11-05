@@ -1,294 +1,191 @@
 ---
-layout: home
-title: Features - Ajax Live Search Plugin for WordPress
+layout: default
+title: Ajax Live Search Plugin Features
 slug: features
+lead: "Learn about what ajax live search has to offer"
 ---
 
-<!DOCTYPE html>
-<html lang="en">
 
-  <head>
+		  <!-- Introduction
+================================================== -->
+<div class="bs-docs-section">
+  <h1 id="introduction" class="page-header">Ajax Live Search Features</h1>
+    <p>Here is a look at the features that come with ajax live search. You can use the table below to check out which features are available on pro and which ones are available on both pro and lite.</p>
+	<div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Version</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Search results ordered by relevance</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>2</td>
+                  <td>Live search</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>3</td>
+                  <td>Autocomplete and search term suggestions</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>4</td>
+                  <td>Ajax Search</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>5</td>
+                  <td>Save visitor searches</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>6</td>
+                  <td>Download past searches as CSV</td>
+                  <td>Pro</td>
+                </tr>
+				<tr>
+                  <td>7</td>
+                  <td>View popular searches</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>8</td>
+                  <td>View search statistics via graphs</td>
+                  <td>Pro</td>
+                </tr>
+				<tr>
+                  <td>9</td>
+                  <td>Dummy data for testing</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>10</td>
+                  <td>Query caching to speed searches by up to 300%</td>
+                  <td>Pro</td>
+                </tr>
+				<tr>
+                  <td>11</td>
+                  <td>Display relevant sponserd results at the top of other search results to increase income from your affiliate products</td>
+                  <td>Pro</td>
+                </tr>
+				<tr>
+                  <td>12</td>
+                  <td>Supports all themes</td>
+                  <td>Both</td>
+                </tr>
+				<tr>
+                  <td>13</td>
+                  <td>Basic Machine Learning to deliver more relevant search results</td>
+                  <td>Pro</td>
+                </tr>
+				<tr>
+                  <td>14</td>
+                  <td>Elastic search-based relevance algorithym</td>
+                  <td>Pro</td>
+                </tr>
+			  </tbody>
+			 </table>
+</div>
+</div>
+		  <!-- Features
+================================================== -->
+<div class="bs-docs-section">
+  <h2 id="relevance" class="page-header">Relevance based search</h2>
+  <p> Ajax Live Search uses a combination of tf-idf and a couple of other factors such as assigning more weight to post titles when calculating their rank for a given search term.</p>
 
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Here's what you can do with Ajax Live Search - The best premium WordPress search plugin. ">
-    <meta name="author" content="Picocodes">
+<p>Unlike other WordPress search plugins, we also use advanced techniques such as lematization  and stemming to increase the number of found search results. For example, when your customer searches for studying, they we also return posts containing relevant words such as study, studied etc.</p>
+  
+  <p> The pro version takes this a step further. For example, when you mispell your query, it will automatically include the results for the correctly spelled query, hence a better search experience for your visitors.</p>
+  </div>
+		  <!-- Live search
+================================================== -->
+<div class="bs-docs-section">
+  <h2 id="live-search" class="page-header">Ajax search and Live search</h2>
 
-    <title>Features - Ajax Live Search Plugin for WordPress</title>
+  <p> When you enable live search; results will be loaded whenever a user adds or removes a word from the main search box.</p>
 
-    <!-- Bootstrap core CSS -->
-    <link href="https://ajaxlivesearch.xyz/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <p> Results are therefore loaded without even submitting the form. We chose to use word-based loading instead of character based loading so as to reduce server load. This is because addition of a single character is highly unlikely to affect the number of matching articles.</p>
 
-    <!-- Custom fonts -->
-    <link rel="stylesheet" href="https://ajaxlivesearch.xyz/vendor/font-awesome/css/font-awesome.min.css">
-    <link rel="stylesheet" href="https://ajaxlivesearch.xyz/vendor/simple-line-icons/css/simple-line-icons.css">
-    <link href="https://fonts.googleapis.com/css?family=Lato|Catamaran:100,200,300,400,500,600,700,800,900|Muli" rel="stylesheet">
+  <p> Ajax search uses the same principle except that results are loaded whenever the form is submitted instead.</p>
+
+  <p> The two features make use of ajax to load results without reloading the page, hence speeding up the search process and leaving your users more likely to find what they are searching for.</p>
+
+<p> For pro users, live search results will be loaded from the cache so you don't have to worry about your server performance.</p>
+  </div>
+  
+		  <!-- Autocompletes
+================================================== -->
+<div class="bs-docs-section">
+  <h2 id="auto-completes" class="page-header">Autocompletes and search query suggestions</h2>
+
+  <p> When you enable this feature; we will give the user a couple of query suggestions depending on what he/she is typing. It's pretty similar to what Google and other search engines do when you start typing on their search forms.</p>
+
+  <p> What makes ajax live search stand out from the rest is that you have a couple of choices on what engine should provide the suggestions. When you chose to use the local database; you will be able to dictate whether to use the posts table or the previous searches table to show suggestions.</p>
+
+  <p> Pro users can also chose between Google or YouTube. This is good when trying to minimise server load since the term suggestions are fetched from the cloud instead.</p>
+
+<img src="../assets/img/preview7.png" alt="auto-completes" class="img-responsive"></img>
+
+  </div>
+
+ 		  <!-- Statistics
+================================================== -->
+<div class="bs-docs-section">
+  <h2 id="statistics" class="page-header">Query logging and Statistics</h2> 
+  <img src="../assets/img/preview-stats.png" alt="stats" class="img-responsive"></img>
+
+	<p> Whenever a user searches, we save the searched keyword to your WordPress database so that you can analyse them later and user them to generate new content ideas or for SEO.</p>
+
+	<p> You can view the statistics ourselves both in table form and as graphs.</p>
+
+	<p> In order to generate you own statistics, download the previous searches (up to 1000) as a CSV file then open them using your favorite spreadsheet program.</p>
+
+	<p> To get new content ideas, take a look at the popular searches that contain zero results and then use them as keyword ideas or to create new products.</p>
+
+<p>For example, if most of your users are searching for "Paleo Diet Tips" and not getting results, your can write a new article on it!</p>
+</div>  
+
+ 		  <!-- Caching
+================================================== -->
+<div class="bs-docs-section">
+  <h2 id="caching" class="page-header">Query caching</h2> 
+  <p> This is only available in the pro version.</p>
+<img src="../assets/img/preview2.png" alt="caching" class="img-responsive"></img>
+
+  <p> Whenever a user searches for a given term, we check to see if it's results exist in our cache. If they do, we fetch them. Otherwise, we query the database for results, save them in the cache and display that instead.</p>
+
+	<p> It works together with other caching systems since it only affects the results section of the search results page. However, unlike other systems; the cache is only updated whenever a new post is added to the index. This is because the order of search results only change whenever a post is added to the database.</p>
+
+	<p> We again use stemming and markov models so that whenever a user searches for a phrase like 'writing an article', 'writing articles' or 'write an article'; we point them to the same cache instead of creating 3 different caches.</p>
+
+<p>This not only speeds up searches by more than 300%, but it also keeps the load on your server at a minimum. </p>
+
+</div>
+
+ 		  <!-- sponsored
+================================================== -->
+<div class="bs-docs-section">
+  <h2 id="sponsored" class="page-header">Sponsored Results</h2> 
+
+  <p> For affiliate marketers, you can configure ajax live search to do the marketing for you. Just like Google displays sponsored results at the top of their search results pages, you can also display relevant links to your affiliate products at the top of search results.</p>
+
+  <p> This increases chances of conversions since the links are highly targeted to the user's intend.</p>
+
+  <p> For example, when someone searches for a phrase like 'summer clothing advice', we query the database for sponsored results that contain the phrase 'summer clothing' (since 'advice' is a stopword).</p>
+
+  <p> If we get a hit, we display it on the search results page; just like normal results are displayed, except it has a different background and we include the word sponsored result. i.e; we show a link (containing the title you provided) to the affiliate website and then add a description below it.</p>
+	<img src="../assets/img/preview6.png" alt="sponsored" class="img-responsive"></img>
+
+<p>Please <a href="../download">visit the downloads page</a> to get started using ajax live search.</p>
+
+</div>
 
 
-    <!-- Plugin CSS -->
-    <link rel="stylesheet" href="https://ajaxlivesearch.xyz/device-mockups/device-mockups.min.css">
-
-    <!-- Custom styles for this template -->
-    <link href="https://ajaxlivesearch.xyz/css/new-age.min.css" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-      ga('require', 'ec');
-      ga('create', 'UA-70027731-2', 'auto');
-      ga('send', 'pageview');
-    </script>
-
-  </head>
-
-  <body id="page-top">
-
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
-      <div class="container">
-        <a class="navbar-brand js-scroll-trigger" href="#page-top">Ajax Live Search</a>
-        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          Menu
-          <i class="fa fa-bars"></i>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarResponsive">
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-              <a class="nav-link js-scroll-trigger" href="https://ajaxlivesearch.xyz/getting-started/">Getting Started</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link js-scroll-trigger" href="https://ajaxlivesearch.xyz/features">Features</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link js-scroll-trigger" href="https://picocodes.typeform.com/to/W5wM2d">Contact</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link js-scroll-trigger" href="https://ajaxlivesearch.xyz/api-docs/">Documentation</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-
-    <header class="masthead">
-            <div class="container h-100">
-              <div class="row h-100">
-                <div class="col-lg-10 my-auto mx-auto">
-                    <h1 class="mb-5">Ajax Live Search Features</h1>
-                    <p>Buy this WordPress plugin by midnight and get free setup.</p>
-                    <a href="https://sellfy.com/p/kWEh/"
-                       class="btn btn-success btn-xl js-scroll-trigger"
-                       onclick="ga('send', 'event', 'Checkout', 'visit', 'Features 1')">$29 BUY NOW</a>
-                    
-                </div>
-
-              </div>
-            </div>
-          </header>
-
-    <section id="features" class="features">
-        <div class="container">
-
-            <div class="row">
-                <div class="col-md-8 offset-md-2">
-                    <div class="container-fluid">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Search logs</h3>
-                                    <p class="text-muted">See what your users are searching for and generate new content ideas. You can download these logs and import them into your favorite keyword research tool.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Search Suggestions</h3>
-                                    <p class="text-muted">Your users get search suggestions as they type. Just like Google does it. These suggestions can be loaded from Google, YouTube, Wikipedia or from previous searches on your website.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Ajax Search</h3>
-                                    <p class="text-muted">Speeds up searches by loading search results without reloading the page.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Live Search</h3>
-                                    <p class="text-muted">Your users get search results while they are still typing.</p>
-                                </div>
-                            </div>
-                        </div>
-						
-						<div class="row">
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Relevance</h3>
-                                    <p class="text-muted">Search results are sorted by relevance and you have complete control over how relevance is calculted.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Faster than light.</h3>
-                                    <p class="text-muted">Ajax Live Search is lightweight and caches search results in order to speed up searches and reduce the load on your server.</p>
-                                </div>
-                            </div>
-                        </div>
-						
-						<div class="row">
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Highlights Search terms</h3>
-                                    <p class="text-muted">The searched terms are highlighted on the search results page.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Smart search engine</h3>
-                                    <p class="text-muted">This plugin understands English and other popular languages hence A search for <code>building</code> also searches for <code>build, builder, buildings</code> etc.</p>
-                                </div>
-                            </div>
-                        </div>
-						
-						
-						<div class="row">
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Earn Money</h3>
-                                    <p class="text-muted">Increase earnings from your affiliate campaigns by upto 326% by displaying sponsored results above normal search results.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="feature-item">
-                                    <i class="icon-check text-primary"></i>
-                                    <h3>Complete control</h3>
-                                    <p class="text-muted">Decide what appears in the search results and how it's weighted. Exclude individual post types, posts, categories or tags from search results.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                                <div class="col-md-6">
-                                    <div class="feature-item">
-                                        <i class="icon-check text-primary"></i>
-                                        <h3>Searches shortcode content</h3>
-                                        <p class="text-muted"> Ajax Live Search searches shortcodes and displays them on search results pages.</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="feature-item">
-                                        <i class="icon-check text-primary"></i>
-                                        <h3>Boolean search</h3>
-                                        <p class="text-muted">  Let your users use search operators to make it easier to find what they are searching for. Here is a complete <a href="getting-started#searching">list of all the search operators.</a></p>
-                                    </div>
-                                </div>
-                            </div>
-						
-                    </div>
-                </div>
-            </div>
-    </section>
-
-    <section class="download bg-light text-center" id="download">
-            <div class="container">
-              <div class="row">
-                <div class="col-md-8 mx-auto">
-                    <p>You can use Ajax Live Search on large websites without fear of overworking your server because it's lightweight and does not include server intensive features such as PDF indexing.</p>
-                        <p>
-                                <a href="https://sellfy.com/p/kWEh/" onclick="ga('send', 'event', 'Checkout', 'visit', 'Features PayPal')">
-                                  <img src="https://ajaxlivesearch.xyz/img/AM_mc_vs_dc_ae.jpg" class="img-fluid" alt="PayPal secure checkout">
-                                </a>
-                              </p>
-
-                              <br>
-                              <P> <a class="badge-link btn btn-info btn-xl js-scroll-trigger"
-                                  href="https://sellfy.com/p/kWEh/"
-                                  onclick="ga('send', 'event', 'Checkout', 'visit', 'Features Below Paypal')">$29 Buy Now</a> and we'll refund you if it does not meet your expections.</a>
-                              </P>
-                </div>
-              </div>
-            </div>
-          </section>
-
-    <section class="cta">
-            <div class="cta-content">
-              <div class="container">
-                <h2>Power up your WordPress search now.</h2>
-                <a  href="https://sellfy.com/p/kWEh/" 
-                    class="btn btn-outline btn-xl js-scroll-trigger" 
-                    onclick="ga('send', 'event', 'Checkout', 'visit', 'Features footer')">Let's Get Started!</a>
-              </div>
-            </div>
-            <div class="overlay"></div>
-          </section>
-      
-          <section class="contact bg-primary" id="contact">
-            <div class="container">
-              <h2>Spread the
-                <i class="fa fa-heart"></i>
-              </h2>
-      
-              <ul class="list-inline list-social">
-                <li class="list-inline-item social-twitter">
-                    <a href="https://twitter.com/share?url=https://ajaxlivesearch.xyz"  title='Share on Twitter' rel='nofollow'  target='_blank' onclick='window.open(this.href,this.title,width=500,height=600,top="100px",left="300px");  return false;'>
-                        <i class="fa fa-twitter"></i>
-                    </a>
-                </li>
-                <li class="list-inline-item social-facebook">
-                    <a href="http://www.facebook.com/sharer.php?u=https://ajaxlivesearch.xyz/"  title='Share on Facebook' rel='nofollow'  target='_blank'  onclick='window.open(this.href,this.title,width=500,height=600,top="100px",left="300px"); return false;'>
-                        <i class="fa fa-facebook"></i>
-                    </a>
-                </li>
-                <li class="list-inline-item social-google-plus">
-                    <a href="https://plus.google.com/share?url=https://ajaxlivesearch.xyz/" title='Share on Google+' rel='nofollow'  target='_blank'  onclick='window.open(this.href,this.title,width=500,height=600,top="100px",left="300px"); return false;'>
-                        <i class="fa fa-google-plus"></i>
-                    </a>
-                </li>
-            </ul>
-            </div>
-          </section>
-      
-          <footer>
-            <div class="container">
-              <p>&copy; Ajax Live Search 2018. All Rights Reserved.</p>
-              <ul class="list-inline">
-                <li class="list-inline-item">
-                  <a href="privacy">Privacy</a>
-                </li>
-                <li class="list-inline-item">
-                  <a href="terms">Terms</a>
-                </li>
-                <li class="list-inline-item">
-                  <a href="faq">FAQ</a>
-                </li>
-              </ul>
-            </div>
-          </footer>
-      
-          <!-- Bootstrap core JavaScript -->
-          <script src="https://ajaxlivesearch.xyz/vendor/jquery/jquery.min.js"></script>
-          <script src="https://ajaxlivesearch.xyz/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-      
-          <!-- Plugin JavaScript -->
-          <script src="https://ajaxlivesearch.xyz/vendor/jquery-easing/jquery.easing.min.js"></script>
-      
-          <!-- Custom scripts for this template -->
-          <script src="https://ajaxlivesearch.xyz/js/new-age.min.js"></script>
-      
-        </body>
-      
-      </html>
-      
