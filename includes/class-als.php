@@ -12,7 +12,7 @@
  * version of the plugin.
  * @since      1.0.0
  *
- * @package    Ajax Live Search Lite
+ * @package    Ajax Live Search
  * @subpackage als/includes
  */
 
@@ -21,9 +21,11 @@
  *
  * @since      1.0.0
  *
- * @package    Ajax Live Search Lite
+ * @package    Ajax Live Search
  * @subpackage Als/includes
  */
+ 
+
 class Als {
 
 	/**
@@ -65,11 +67,17 @@ class Als {
 	 */
 	public function __construct() {
 
-		$this->plugin_name = 'Ajax Live Search Lite';
-		$this->version = '1.0';
+		$this->plugin_name = 'Ajax Live Search';
+		$this->version = '2.0.0';
 
 		$this->load_dependencies();
 		$this->set_locale();
+		
+		if(intval(get_option('als_db_version', 2))<2){
+			
+			als_install_version_2(); 
+			
+		}
 
 	}
 

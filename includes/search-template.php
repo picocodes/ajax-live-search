@@ -3,23 +3,25 @@
  * The template for displaying search results pages
  * Adapted from wp Twenty_Sixteen
  *
- * @package Ajax Live Search Lite
- * @since Ajax Live Search Lite 1.0
+ * @package Ajax Live Search
+ * @since Ajax Live Search 1.0
  */
 
 get_header(); 
 
+$users = als_has_authors();
+
 ?>
 
-	<section id="primary" class="content-areas als-search-content">
+	<section id="primary" class="content-area als-search-content">
 		<main id="main" class="site-main" role="main">
 
 		<?php if ( have_posts() || $users !==false) : ?>
 			<div class="als-mainform"><?php get_search_form();?>
 			
 				<?php 
-					$result_count = apply_filters('als_results_count', ALS_SEARCH_RESULTS);
-					$before_results = '<span class="results-count">Found ' . $result_count . ' results matching your query</span>';
+					
+					$before_results = '<span class="als_before_results">' . __("Showing results for ")  . esc_attr__($_GET["s"]) . '</span>';
 					
 					echo apply_filters('als_before_results', $before_results);?>
 					
@@ -27,7 +29,11 @@ get_header();
 			<div id="#als-results" class="als-results">
 			
 			<?php
-
+			do_action('als_before_results');
+			
+			if($users) {
+				als_show_authors($users);
+			}
 			// Start the loop.
 			while ( have_posts() ) : the_post(); ?>
 
@@ -51,6 +57,7 @@ get_header();
 				
 
 				<div class="entry-summary">
+					<div class="entry-meta"><?php do_action('als_entry_meta');?></div>
 
 					 <?php echo als_snippet(get_the_content()); ?>
 				</div><!-- .entry-summary -->
@@ -64,10 +71,11 @@ get_header();
 
 			// Previous/next page navigation.
 			the_posts_pagination( array(
-				'prev_text'          => __( 'Previous page', 'als-lite' ),
-				'next_text'          => __( 'Next page', 'als-lite' ),
+				'prev_text'          => __( 'Previous page', 'als' ),
+				'next_text'          => __( 'Next page', 'als' ),
 				'before_page_number' => '<span class="meta-nav screen-reader-text">' . __( 'Page', 'als' ) . ' </span>',
 			) );
+			do_action('als_after_results');
 			 //endif
 		echo '</div>';
 		// If no content, include the "No posts found" template.

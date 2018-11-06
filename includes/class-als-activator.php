@@ -9,7 +9,7 @@
  * @subpackage Als/includes
  */
  
- require_once( ALS_LITE__PLUGIN_DIR . 'includes/functions.php'    );
+ require_once( ALS__PLUGIN_DIR . 'includes/functions.php'    );
 	 
 /**
  * Fired during plugin activation.
@@ -24,17 +24,29 @@
 class Als_Activator {
 
 	/**
-	 * Calls the functions need to build an index
+	 * Calls the functions needed to create the initial database calls
 	 *
-	 * And save the index to the database
 	 *
 	 * @since    1.0.0
 	 */
 	public static function activate() {
+		
+	if (function_exists('wp_suspend_cache_addition')) 
+		wp_suspend_cache_addition(true);	
+
+	if (!ini_get('safe_mode')) 	{
+		set_time_limit(0);
+	}
 	
 	self::als_db_options();
-	self::als_create_index();
+	self::als_create_tables();
 	
+	
+	if (function_exists('wp_suspend_cache_addition')) {
+		wp_suspend_cache_addition(false);
+		}
+		
+	set_transient( '_welcome_screen_activation_redirect', true, 60 );	
 	}
 	
 	/**
@@ -47,21 +59,18 @@ class Als_Activator {
 	 
 	public static function als_db_options() {
 
-	add_option('als_db_version', 1);
-	add_option('als_indexed_posts', 0);
-	add_option('als_last_indexed', 0);
-	add_option('als_highest_indexed', 0);
+	$version = explode('.', ALS_VERSION);
+	add_option('als_db_version', $version[0] . '.' . $version[1]);
 
 	}
 	/**
-	 * Creates the initial index from the existing posts
+	 * Creates the searches log table
 	 *
-	 * uses the indexing class
 	 *
 	 * @since    1.0.0
 	 */
 	 
-	public static function als_create_index() {
+	public static function als_create_tables() {
 	global $wpdb;
 	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -81,27 +90,14 @@ class Als_Activator {
 	    }
     }
     
-	$index_table = $wpdb->prefix . "als_index";	
+
 	$searches_log_table = $wpdb->prefix . "als_log";
+	$wpdb->query("DROP TABLE IF EXISTS $searches_log_table;");
+
 	
-		$sql = "CREATE TABLE " . $index_table . " (id int(11) NOT NULL AUTO_INCREMENT,
-		post_id bigint(20) NOT NULL DEFAULT '0', 
-		term varchar(60) NOT NULL DEFAULT '0', 
-		tf FLOAT(11) NOT NULL DEFAULT '0', 
-		relevance FLOAT(11) NOT NULL DEFAULT '0',
-		count int(11) NOT NULL DEFAULT '0',
-		UNIQUE KEY id (id)) $charset_collate";
-		
-		dbDelta($sql);
-
-		//$sql = "ALTER TABLE $index_table ADD PRIMARY KEY(`id`)";
-		//$wpdb->get_results($sql);
-		
-		//$sql = "ALTER TABLE $index_table ALTER TABLE `wp_als_index` ADD INDEX(`term`)";
-		//$wpdb->get_results($sql);
-
 		$sql = "CREATE TABLE " . $searches_log_table . " (id bigint(9) NOT NULL AUTO_INCREMENT, 
 		query varchar(200) NOT NULL,
+		modified varchar(200) NOT NULL,
 		hits mediumint(9) NOT NULL DEFAULT '0',
 		searches mediumint(9) NOT NULL DEFAULT '1',
 		time timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -109,31 +105,15 @@ class Als_Activator {
 
 		dbDelta($sql);
 		
-
-	if (function_exists('wp_suspend_cache_addition')) 
-		wp_suspend_cache_addition(true);	
-
-	if (!ini_get('safe_mode')) 	{
-		set_time_limit(0);
-	}
+		
+	// We will be using MySQL's inbuilt fulltext engine for faster searches
+	// Please not that it doesnt support Inoodb until version 5.5.7
 	
-	$post_types = apply_filters('als_index_post_types', array('"post"','"page"'));
-
-	$content = als_fetch_posts($post_types, 100);
-	
-	update_option('als_indexed_posts', count($content));
-	
-	foreach ($content as $post) {
-		als_single_index($post->ID, false);
-	}
-	
-	$wpdb->query("ANALYZE TABLE $index_table");
-	// To prevent empty indices
-
-	if (function_exists('wp_suspend_cache_addition')) {
-		wp_suspend_cache_addition(false);
-		}
-
+	$wpdb->query("ALTER TABLE {$wpdb->posts} ENGINE=MyISAM");
+	$wpdb->query("CREATE FULLTEXT INDEX als_title_fulltext ON {$wpdb->posts} (post_title)");
+	$wpdb->query("CREATE FULLTEXT INDEX als_fulltext ON {$wpdb->posts} (post_title, post_content)");	
+	$wpdb->query("ANALYZE TABLE {$wpdb->posts}");
+		
 }
 
 }

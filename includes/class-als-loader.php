@@ -5,7 +5,7 @@
  *
  * @since      1.0.0
  *
- * @package Ajax Live Search Lite
+ * @package Ajax Live Search
  * @subpackage Als/includes
  */
 
@@ -16,7 +16,7 @@
  * the plugin, and register them with the WordPress API. Call the
  * run function to execute the list of actions and filters.
  *
- * @package    Ajax Live Search Lite
+ * @package    Ajax Live Search
  * @subpackage als/includes
  * @author     Picocodes <picocodes@gmail.com>
  */
@@ -48,31 +48,54 @@ class Als_Loader {
 	 * @since    1.0.0
 	 */
 	public function __construct() {
-		require_once( ALS_LITE__PLUGIN_DIR . 'includes/filters.php'    ); //Filters
-		require_once( ALS_LITE__PLUGIN_DIR . 'includes/actions.php'    ); //Actions
-		require_once( ALS_LITE__PLUGIN_DIR . 'includes/admin/settings.php'    ); //Settings api
+		require_once( ALS__PLUGIN_DIR . 'includes/filters.php'    ); //Filters
+		require_once( ALS__PLUGIN_DIR . 'includes/actions.php'    ); //Actions
+		require_once( ALS__PLUGIN_DIR . 'includes/admin/settings.php'    ); //Settings api
 
 		$this->actions = array();
 		$this->filters = array();
 		
+		if(get_option('als_enable_search', 'yes') != 'no'){
+			
+			$this->add_action( 'pre_get_posts', 'als_pre_get_posts', 10000 );
+			
+			$this->add_filter( 'als_index_post_types', 'als_index_post_types' );
+			$this->add_filter( 'als_use_custom_search', 'als_use_custom_search' );
+			$this->add_filter( 'als_author_in', 'als_author_in', 10, 2 );
+			$this->add_filter( 'als_author_not_in', 'als_author_not_in', 10, 2 );
+			$this->add_filter( 'als_author_name', 'als_author_name', 10, 2 );
+			$this->add_filter( 'als_cat', 'als_cat', 10, 2 );
+			$this->add_filter( 'als_category_name', 'als_category_name', 10, 2 );
+			$this->add_filter( 'als_category_in', 'als_category_in', 10, 2 );
+			$this->add_filter( 'als_category_not_in', 'als_category_not_in', 10, 2 );
+			$this->add_filter( 'als_tag', 'als_tag', 10, 2 );
+			$this->add_filter( 'als_posts_per_page', 'als_all_posts_on_a_single_page', 10, 2 );
+			$this->add_filter( 'als_date_query', 'als_date_query', 10, 2 );
+			$this->add_filter( 'als_wp_query_post_types', 'als_wp_query_post_types', 10, 2 );
+			$this->add_filter( 'als_searching_settings', 'als_searching_settings');
+			$this->add_filter( 'als_search_conditions', 'als_search_conditions' );
+
+			
+		}
+		
+		if(get_option('als_enable_render', 'yes') != 'no'){
+			$this->add_filter( 'search_template', 'als_search_template' );
+
+			
+			
+		}
 		$this->add_action( 'wp_ajax_alsgetresults', 'als_ajax_results' );
 		$this->add_action( 'wp_ajax_nopriv_alsgetresults', 'als_ajax_results' );
 		$this->add_action( 'wp_ajax_alsgetsuggestions', 'als_get_suggestions' );
 		$this->add_action( 'wp_ajax_nopriv_alsgetsuggestions', 'als_get_suggestions' );
-		$this->add_action( 'wp_enqueue_scripts', 'als_frontend_scripts' );
-		$this->add_action( 'pre_get_posts', 'als_pre_get_posts', 10000 );
+		$this->add_action( 'wp_enqueue_scripts', 'als_frontend_scripts' );		
 		$this->add_action( 'admin_menu', 'Als_Admin_Settings::add_menu_page' );
-		$this->add_action( 'save_post', 'als_publish_post',10 ,3 );
-		$this->add_action( 'als_sections_searching', 'als_general_index_more' );
+		$this->add_action( 'admin_init', 'als_admin_init' );
+		$this->add_action( 'admin_head', 'als_remove_menus' );
+		$this->add_action( 'wp_head', 'als_wp_head' );
 		
-		
-		$this->add_filter( 'als_index_post_types', 'als_index_post_types' );
+		add_filter( 'body_class', 'als_body_classes' );
 		$this->add_filter( 'get_search_form', 'als_form_filter' );
-		$this->add_filter( 'search_template', 'als_search_template' );
-		$this->add_filter( 'als_search_conditions', 'als_search_conditions' );
-		$this->add_filter( 'als_use_custom_search', 'als_use_custom_search' );
-
-
 	}
 
 	/**

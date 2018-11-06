@@ -4,7 +4,7 @@
  *
  *
  * @since             1.0
- * @package           Ajax Live Search Lite
+ * @package           Ajax Live Search
  *
  */
  
@@ -16,7 +16,7 @@
  *
  * @since      1.0.0
  *
- * @package    Ajax Live Search Lite
+ * @package    Ajax Live Search
  * @subpackage als/includes
  */
 
@@ -31,7 +31,7 @@ class Als_i18n {
 	public function load_plugin_textdomain() {
 
 		load_plugin_textdomain(
-			'als-lite',
+			'als',
 			false,
 			ALS__PLUGIN_DIR . '/languages/'
 		);
