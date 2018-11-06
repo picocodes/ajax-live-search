@@ -11,7 +11,7 @@ lead: "Learn how to write addons that extend Ajax Live search plugin"
   <h1 id="introduction" class="page-header">Developers quickstart guide to ajax live search</h1>
 	<p> This tutorial is going to take you through the process of extending ajax live search via addons. We are going to assume that you know the basics of developing WordPress plugins. If not, then take a look at the codex first.</p>
 	<p> We will create a WordPress plugin that replaces the text that is displayed at the top of search results. By default, ajax live search displays the number of found results;</p>
-	<p> However, we are going to change it to display the text 'Results for $query', where query is the term that the user was searching for.</p>
+	<p> However, we are going to change it to display the text `Results for $query`, to where query is the term that the user was searching for.</p>
 	<p> To accomplish this; we will attach a filter to the following hook: <code>als_before_results</code></p>
 	
 </div>
@@ -19,7 +19,7 @@ lead: "Learn how to write addons that extend Ajax Live search plugin"
 <!-- Starting up -->
 <div class="bs-docs-section">
   <h2 id="begin" class="page-header">Starting up</h2>
-  <p>On your desktop; create a new file and name it my-plugin.php, or anything that you want to use as the name of our new plugin.</p>
+  <p>On your desktop; create a new file and name it `my-plugin.php`.</p>
   <p> Now open it using your favourite editor (I use VS Code) and type the following. If you have a basic idea of plugin development, then the following codes should be very simple to follow up.</p>
 <pre>
 &lt?php
