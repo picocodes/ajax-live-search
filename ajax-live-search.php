@@ -8,18 +8,19 @@
  * registers the activation and deactivation functions, and defines a function
  * that starts the plugin.
  *
- * @since             1.0
+ * @since             2.0.0
  * @package           Ajax Live Search Lite
  *
  * @wordpress-plugin
- * Plugin Name:       Ajax Live Search Lite
- * Plugin URI:        http://codecanyon.net
+ * Plugin Name:       Ajax Live Search
+ * Plugin URI:        http://ajaxlivesearch.xyz
  * Description:       Supercharge your WordPress search functionality by adding autosuggest, live search, relevance-based search and tons of other cool features.
- * Version:           1.0
+ * Version:           2.3.0
  * Author:            Picocodes
- * Author URI:        https://sellfy.com/picocodes
- * License:           GPL
- * Text Domain:       als-lite
+ * Author URI:        https://github.com/picocodes
+ * License:           Extended License
+ * License URI:      
+ * Text Domain:       als
  * Domain Path:       /languages
  */
 
@@ -28,8 +29,9 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-define( 'ALS_LITE__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-
+define( 'ALS__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'ALS__CACHE_DIR', plugin_dir_path( __FILE__ ) . 'cache/' );
+define( 'ALS_VERSION', '2.1.0-lite' );
 
 /**
  * The code that runs during plugin activation.
